@@ -7,6 +7,8 @@ function y = showImagesAndResults(start,stop, directory)
 % x pour avancer rapidement
 % q pour quitter
 
+nrMaxima = 3;
+boxSize = 15;
 
 if start>stop
     error('start doit être inférieur ou égal à stop')
@@ -41,15 +43,22 @@ while(1)
     title('Origin Lab image')
     axis equal tight
     subplot(2,2,3);
-    [F,labimg]=convertColorSpaces(frame);
+    F=convertColorSpaces(frame);
     imagesc(F)
     title('F')
     colormap(gray)
     axis equal tight
     subplot(2,2,4);
-    imagesc(labimg);
+    imagesc(frame)
+    
+    [xmax,ymax,maximas] = detectMaxima(F,nrMaxima,boxSize);
+    
+    for i=1:nrMaxima
+        rectangle('position',[xmax(i)-(boxSize-1)/2,ymax(i)-(boxSize-1)/2,boxSize,boxSize], 'EdgeColor', 'r')
+    end
+    
     axis equal tight
-    title('Transformed Lab')
+    title('Maximas')
     if (currkey ~= 'w' & currkey ~= 'x')
         pause; % wait for a keypress
     else
