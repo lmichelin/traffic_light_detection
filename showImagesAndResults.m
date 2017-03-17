@@ -7,8 +7,10 @@ function y = showImagesAndResults(start,stop, directory)
 % x pour avancer rapidement
 % q pour quitter
 
-nrMaxima = 3;
-boxSize = 15;
+nrMaxima = 2;
+boxSize = 21;
+seuil = 0.28;
+proportionYmax = 0.3; % on ne va pas chercher les feux rouges plus bas
 
 if start>stop
     error('start doit être inférieur ou égal à stop')
@@ -22,8 +24,8 @@ while(1)
     %size(frame) %c'est une matrice de vecteurs de taille 3. Il y a 480 lignes et 640 colonnes. Taille 480*640*3 
     %frame(1:10,1:10,1:3) %La matrice prend des valeurs entre 0 et 255.
     %Chaque valeur représente l'intensité de la couleur correspondante (rouge, vert, ou bleu)
-    current_lab = sprintf('%s/lab_%06d.jpg', directory,indice);
-    lab = imread(current_lab);
+    %current_lab = sprintf('%s/lab_%06d.jpg', directory,indice);
+    %lab = imread(current_lab);
     %size(lab) %c'est une matrice de vecteurs de taille 3. Il y a 480 lignes et 640 colonnes. Taille 480*640*3 
     %lab(1:10,1:10,1:3)
     %L* est la clarté, qui va de 0 (noir) à 100 (blanc).
@@ -33,28 +35,55 @@ while(1)
     %min(min(labmult))
     %max(max(labmult))
     %Si on multiplie la matrice par 255 on obtient une image blanche et la matrice ne contient que des 255.
-    subplot(2,2,1);
+    %subplot(2,2,1);
     %fprintf('%s %s\n',currkey,current_img)
-    imagesc(frame)
-    axis equal tight
-    title('Origin RGB frame')
-    subplot(2,2,2);
-    imagesc(lab)
-    title('Origin Lab image')
-    axis equal tight
-    subplot(2,2,3);
+    %imagesc(frame)
+    %axis equal tight
+    %title('Origin RGB frame')
+    %subplot(2,2,2);
+    %imagesc(lab)
+    %title('Origin Lab image')
+    %axis equal tight
+    %subplot(2,2,3);
     F=convertColorSpaces(frame);
-    imagesc(F)
-    title('F')
-    colormap(gray)
+    %imagesc(F)
+    [tailleImgY, tailleImgX] = size(F);
+    %title('F')
+    %colormap(gray)
     axis equal tight
-    subplot(2,2,4);
+    %subplot(2,2,4);
     imagesc(frame)
     
-    [xmax,ymax,maximas] = detectMaxima(F,nrMaxima,boxSize);
+    [xmax,ymax,maximas] = detectMaxima(F(1 : floor(tailleImgY*proportionYmax) , 1 : tailleImgX),nrMaxima,boxSize);
+    
+    %zone de detection
+    rectangle('position',[1,1,tailleImgX,floor(tailleImgY*proportionYmax)], 'EdgeColor', 'y')
     
     for i=1:nrMaxima
-        rectangle('position',[xmax(i)-(boxSize-1)/2,ymax(i)-(boxSize-1)/2,boxSize,boxSize], 'EdgeColor', 'r')
+        if maximas(i) > seuil
+            posx = xmax(i)-(boxSize-1)/2;
+            posy = ymax(i)-(boxSize-1)/2;
+            if posx < 0
+                newBoxSizeX = boxSize + posx;
+                newPosX = 0;
+            else
+                newPosX = posx;
+                newBoxSizeX = boxSize;
+            end
+            if posy < 0
+                newBoxSizeY = boxSize + posy;
+                newPosY = 0;
+            else
+                newPosY = posy;
+                newBoxSizeY = boxSize;
+            end
+
+            newBoxSizeX = min(tailleImgX-newPosX,newBoxSizeX);
+            newBoxSizeY = min(tailleImgY-newPosY,newBoxSizeY);
+
+            rectangle('position',[xmax(i),ymax(i),1,1], 'EdgeColor', 'b')
+            rectangle('position',[newPosX,newPosY,newBoxSizeX,newBoxSizeY], 'EdgeColor', 'r')
+        end
     end
     
     axis equal tight
@@ -62,7 +91,7 @@ while(1)
     if (currkey ~= 'w' & currkey ~= 'x')
         pause; % wait for a keypress
     else
-        pause(0.01);
+        pause(0.02);
     end
     currkey=get(gcf,'CurrentKey');
     switch currkey
