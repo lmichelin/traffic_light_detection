@@ -7,10 +7,17 @@ function y = showImagesAndResults(start,stop, directory)
 % x pour avancer rapidement
 % q pour quitter
 
-nrMaxima = 2;
+nrMaxima = 5;
 boxSize = 21;
-seuil = 0.28;
+seuil = 0.25;
+maxSize = boxSize;
+nb_maxs = 3; %nombre de maxs nécessaires dans le filtre size pour rejeter les grandes zones de rouge
+seuil2 = 0.16; %seuil du filtre size
+%voisinage_size = 30; 
 proportionYmax = 0.3; % on ne va pas chercher les feux rouges plus bas
+
+xmax=[];
+ymax =[];
 
 if start>stop
     error('start doit être inférieur ou égal à stop')
@@ -53,14 +60,17 @@ while(1)
     axis equal tight
     %subplot(2,2,4);
     imagesc(frame)
-    
+    xmax_prev = xmax;
+    ymax_prev = ymax;
     [xmax,ymax,maximas] = detectMaxima(F(1 : floor(tailleImgY*proportionYmax) , 1 : tailleImgX),nrMaxima,boxSize);
     
     %zone de detection
     rectangle('position',[1,1,tailleImgX,floor(tailleImgY*proportionYmax)], 'EdgeColor', 'y')
-    
+    passed = filterDetectionsThreshold(xmax, ymax, F, seuil);
+    passed = passed .* filterDetectionsSize( xmax, ymax, F, maxSize, nb_maxs, seuil2);
+    %passed = passed .* filterDetectionsRepetition(xmax,ymax,xmax_prev,ymax_prev,voisinage_size);
     for i=1:nrMaxima
-        if maximas(i) > seuil
+        if passed(i)
             posx = xmax(i)-(boxSize-1)/2;
             posy = ymax(i)-(boxSize-1)/2;
             if posx < 0
@@ -81,13 +91,13 @@ while(1)
             newBoxSizeX = min(tailleImgX-newPosX,newBoxSizeX);
             newBoxSizeY = min(tailleImgY-newPosY,newBoxSizeY);
 
-            rectangle('position',[xmax(i),ymax(i),1,1], 'EdgeColor', 'b')
-            rectangle('position',[newPosX,newPosY,newBoxSizeX,newBoxSizeY], 'EdgeColor', 'r')
+            rectangle('position',[xmax(i)-1,ymax(i)-1,2,2], 'EdgeColor', 'b')
+            rectangle('position',[newPosX,newPosY,newBoxSizeX-1,newBoxSizeY-1], 'EdgeColor', 'r')
         end
     end
     
     axis equal tight
-    title('Maximas')
+    title(current_frame)
     if (currkey ~= 'w' & currkey ~= 'x')
         pause; % wait for a keypress
     else
@@ -109,7 +119,7 @@ while(1)
             end
         case 'x'
             if indice < stop
-                indice = indice + 1;
+                indice = indice + 10;
             end
         case 'q'
             close all
