@@ -1,10 +1,11 @@
-function y = showImagesAndResults(start,stop, directory)
+function Film = showImagesAndResults(start,stop, directory)
 
 % touches :
 % a pour reculer d'une image
 % w pour reculer rapidement
 % d pour avancer d'une image
 % x pour avancer rapidement
+% f pour filmer
 % q pour quitter
 
 nrMaxima = 5;
@@ -18,7 +19,8 @@ proportionYmax = 0.3; % on ne va pas chercher les feux rouges plus bas
 
 xmax=[];
 ymax =[];
-
+Film = struct('cdata',[],'colormap',[]);
+Film_indice = 1;
 if start>stop
     error('start doit être inférieur ou égal à stop')
 end
@@ -98,7 +100,7 @@ while(1)
     
     axis equal tight
     title(current_frame)
-    if (currkey ~= 'w' & currkey ~= 'x')
+    if (currkey ~= 'w' & currkey ~= 'x'& currkey ~= 'f')
         pause; % wait for a keypress
     else
         pause(0.02);
@@ -120,6 +122,12 @@ while(1)
         case 'x'
             if indice < stop
                 indice = indice + 10;
+            end
+        case 'f'
+            if indice < stop
+                indice = indice +1;
+                Film(Film_indice) = getframe;
+                Film_indice = Film_indice + 1;
             end
         case 'q'
             close all
